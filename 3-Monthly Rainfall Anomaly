@@ -1,4 +1,8 @@
 # If you use Google Colab, upload MSWEP_MON_INA_197902-202011.nc to your Google Drive first
+# If you have any questions about the script, feel free to contact me: kristy@students.itb.ac.id
+
+from google.colab import drive
+drive.mount('/content/drive')
 
 import xarray as xr
 import numpy as np
