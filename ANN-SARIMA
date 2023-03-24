@@ -1,0 +1,106 @@
+# If you use Google Colab, upload indeksmonsunindo.xlsx to your Google Drive first
+# If you have any questions about the script, feel free to contact me: kristy@students.itb.ac.id
+
+from google.colab import drive
+drive.mount('/content/drive')
+
+# Step 1: Seasonal ARIMA
+!pip install pmdarima
+
+# Import the required libraries
+import pandas as pd
+from pmdarima import auto_arima
+import statsmodels.api as sm
+
+# Load the time series data into a pandas dataframe
+data = pd.read_excel('/content/drive/MyDrive/indeksmonsunindo.xlsx')
+data = data["index"]
+
+# Fitting Model SARIMA
+#Model terbaik berdasarkan minitab 
+model = sm.tsa.statespace.SARIMAX(data, order=(0,0,3), seasonal_order=(0,1,4,12))
+res = model.fit(disp=False)
+print(res.summary())
+
+# Print indeks model SARIMA
+#Extract index from SARIMAX object
+index = model.fittedvalues.index
+#Print index to console
+print(index)
+
+# Create a DataFrame with the index
+df = pd.DataFrame({'value': model.fittedvalues}, index=index)
+
+# Check for missing or NaN values
+print(df.isnull().sum())
+
+# Save the DataFrame to an Excel file
+df.to_excel('/content/drive/MyDrive/indekssarima.xlsx', index=False)
+
+# Validasi
+model = sm.tsa.statespace.SARIMAX(data[-12:], order=(0,0,3), seasonal_order=(0,1,5,12))
+model_fit = model.fit()
+predictions = model_fit.predict(start=len(data), end=len(data)+11, typ='levels')
+predictions
+
+# Forecast SARIMA
+# Make predictions with ARIMA model
+predictions = model_fit.predict(start=len(data), end=len(data)+12, typ='levels')
+predictions
+
+# Step 2: ANN-SARIMA
+# Load the data
+data = pd.read_excel('/content/drive/MyDrive/indekssarima.xlsx')
+data = data["index"]
+
+from sklearn.preprocessing import MinMaxScaler
+from keras.models import Sequential
+from keras.layers import Dense
+import numpy as np
+
+# Scale the data for processing in ANN
+train = data.values
+train = train.reshape(-1, 1)
+
+scaler = MinMaxScaler()
+data_scaled = scaler.fit_transform(train)
+
+# Split the data into training and test sets
+train_data = data_scaled[:-13]
+test_data = data_scaled[-13:]
+
+train_data = train_data.reshape(-1, 1)
+test_data = test_data.reshape(-1, 1)
+
+# Create four configurations of the ANN model
+ann_models = []
+for window in [3, 6, 9, 12]:
+    # Initialize the ANN model
+    model = Sequential()
+    model.add(Dense(12, input_dim=1, activation='relu'))
+    model.add(Dense(1))
+    model.compile(loss='mean_squared_error', optimizer='adam')
+
+    # Train the ANN model
+    history = model.fit(train_data[:, -window:], train_data[:, 0], epochs=100, verbose=0)
+    
+    # Make predictions with the ANN model
+    predictions_ann = model.predict(test_data[:, -window:])
+    
+    # Invert the predictions
+    predictions_ann = scaler.inverse_transform(predictions_ann)
+    
+    # Store the model and its predictions
+    ann_models.append((model, predictions_ann))
+
+# Combine the predictions from the four configurations of the ANN model
+predictions_combined = np.mean([predictions_ann for _, predictions_ann in ann_models], axis=0)
+predictions_combined
+
+import pandas as pd
+
+# Convert predictions_combined ndarray to DataFrame
+predictions_df = pd.DataFrame(predictions_combined)
+
+# Save DataFrame to Excel file
+predictions_df.to_excel('/content/drive/MyDrive/ann_arima.xlsx', index=False)
