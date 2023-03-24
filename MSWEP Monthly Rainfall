@@ -1,8 +1,14 @@
+# If you use Google Colab, upload MSWEP_MON_INA_197902-202011.nc to your Google Drive first
+# If you have any questions about the script, feel free to contact me: kristy@students.itb.ac.id
+
+from google.colab import drive
+drive.mount('/content/drive')
+
 !pip install xarray
 
 # Load the .nc file using xarray
 import xarray as xr
-ds = xr.open_dataset('/content/drive/MyDrive/Project Monsun/Data/MSWEP_MON_INA_197902-202011.nc')
+ds = xr.open_dataset('/content/drive/MyDrive/MSWEP_MON_INA_197902-202011.nc')
 ds = ds['precipitation']
 ds
 
