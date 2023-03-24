@@ -1,0 +1,73 @@
+!pip install xarray
+
+# Load the .nc file using xarray
+import xarray as xr
+ds = xr.open_dataset('/content/drive/MyDrive/Project Monsun/Data/MSWEP_MON_INA_197902-202011.nc')
+ds = ds['precipitation']
+ds
+
+# Monthly Rainfall Plot
+!pip install cartopy
+!pip uninstall -y shapely
+!pip install shapely --no-binary shapely --force
+
+import xarray as xr
+import numpy as np
+import matplotlib.pyplot as plt
+import cartopy as crt
+import cartopy.crs as ccrs
+import cartopy.feature as cftr
+import seaborn as sns
+#sns.set_theme(context='talk', font='serif', palette='colorblind')
+
+dsa = ds.sel(time=slice('1990-01','2019-12'))
+dsa = dsa.groupby('time.month').mean()
+#dsa = ds['time'].index.month.isin([11,12,1,2,3,4])
+dsa
+
+  #Tren kecepatan angin di Indonesia (m/s per dekade)
+  import matplotlib.pyplot as plt
+  import matplotlib.ticker as mticker
+  import cartopy.crs as ccrs
+  from cartopy.mpl.ticker import (LongitudeFormatter, LatitudeFormatter, LatitudeLocator)  
+  fig = plt.figure(figsize=(15,10))
+  #mode_spasial = param_ccmp_ind.polyfit_coefficients.sel(degree=1)*(1/3.805175038E-16)*120
+  level = np.linspace(0, 500, 6, endpoint=True)
+  ax = plt.subplot2grid((4,1), (0,0), rowspan=3, 
+                        projection=crt.crs.PlateCarree())
+  PC_map = dsa.isel(month=0).plot.contourf(ax=ax, #Change the month to 1 for February, 2 for March, etc
+                                      cmap='RdYlBu', 
+                                      levels=level,
+                                      extend='both',
+                                      transform=ccrs.PlateCarree(),
+                                      add_colorbar=False)
+  plt.colorbar(PC_map, 
+              shrink=0.8, 
+              pad=0.1,
+              aspect=50,
+               orientation='horizontal'
+              ).set_label("mm")
+  ax.set_title("Rata-rata Curah Hujan Bulan Januari 1990-2019", size=20, pad=15)
+  ax.coastlines(lw=2, color='k', zorder=2)
+  ax.add_feature(cftr.LAND, facecolor='white', zorder=0)
+
+  ax.coastlines()
+    
+  #ax.set_extent([90, 150, -15, 15])
+    
+  gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+                    linewidth=2, color='white',alpha=0.6)
+  gl.top_labels = False
+  gl.right_labels = False
+    
+  gl.ylocator = LatitudeLocator()
+  gl.xformatter = LongitudeFormatter()
+  gl.yformatter = LatitudeFormatter()
+
+    
+  gl.xlabel_style = {'size': 18, 'color': 'k'}#, 'rotation':45}
+  gl.ylabel_style = {'color': 'k',  'size':18}
+  
+  #ax0.gridlines()
+
+  plt.show()
